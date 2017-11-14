@@ -21,4 +21,23 @@ void unlock_mutex(void *locks, int lock_no);
 fz_locks_context *new_locks();
 void free_locks(fz_locks_context * locks);
 int get_rotation(fz_context *ctx, fz_page *page);
-int convert(int pageNum);
+int convert(int pageNum, char *goBuf);
+
+typedef struct
+{
+	fz_document_writer super;
+	char *path;
+	int count;
+	fz_output *out;
+	int text_format;
+	int reuse_images;
+} fz_svg_writer;
+
+struct fz_buffer_s
+{
+	int refs;
+	unsigned char *data;
+	size_t cap, len;
+	int unused_bits;
+	int shared;
+};

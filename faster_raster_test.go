@@ -2,6 +2,7 @@ package lazypdf
 
 import (
 	"image"
+	"io/ioutil"
 	"sync"
 	"testing"
 	"time"
@@ -58,6 +59,22 @@ func Test_getRotation(t *testing.T) {
 		raster.Run()
 
 		So(raster.getRotation(2), ShouldEqual, 0)
+
+		raster.Stop()
+	})
+}
+
+func Test_getSVG(t *testing.T) {
+	Convey("Does some useful things", t, func() {
+		raster := NewRasterizer("fixtures/travel.pdf")
+		raster.Run()
+
+		buf := make([]byte, 1024*1024)
+		out := raster.getSVG(2, buf)
+		So(out, ShouldEqual, 0)
+
+		err := ioutil.WriteFile("out.svg", buf, 0644)
+		So(err, ShouldBeNil)
 
 		raster.Stop()
 	})

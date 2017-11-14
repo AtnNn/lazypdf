@@ -260,13 +260,15 @@ func (r *Rasterizer) Stop() {
 // getRotation is used by tests to test the C rotation functions since you can't
 // call Cgo directly from tests.
 func (r *Rasterizer) getRotation(pageNum int) int {
-	return int(C.convert(C.int(pageNum - 1)))
+	page := C.fz_load_page(r.Ctx, r.Document, C.int(pageNum-1))
+	defer C.fz_drop_page(r.Ctx, page)
 
-	// page := C.fz_load_page(r.Ctx, r.Document, C.int(pageNum-1))
-	// defer C.fz_drop_page(r.Ctx, page)
+	rotation := C.get_rotation(r.Ctx, page)
+	return int(rotation)
+}
 
-	// rotation := C.get_rotation(r.Ctx, page)
-	// return int(rotation)
+func (r *Rasterizer) getSVG(pageNum int, buf []byte) int {
+	return int(C.convert(C.int(pageNum-1), (*C.char)(unsafe.Pointer(&buf[0]))))
 }
 
 // scalePage figures out how we're going to scale the page when rasterizing. If
