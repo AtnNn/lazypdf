@@ -151,14 +151,12 @@ int get_rotation(fz_context * ctx, fz_page * page) {
 							 PDF_NAME_Rotate));
 }
 
-int convert(int pageNum, char *goBuf)
-{
+fz_buffer *getSVG(char *filename, int pageNum, fz_context *ctx) {
 	int alphabits = 8;
 	float layout_w = 450;
 	float layout_h = 600;
 	float layout_em = 12;
 
-	fz_context *ctx;
 	fz_document *doc;
 	fz_document_writer *writer;
 
@@ -166,52 +164,25 @@ int convert(int pageNum, char *goBuf)
 	fz_page *page;
 	fz_device *dev;
 
-	char *password = "";
-
-	const char *output = "testxx.svg";
-
-	fz_buffer *buf = (fz_buffer *)goBuf;
-
-	/* Create a context to hold the exception stack and various caches. */
-	ctx = fz_new_context(NULL, NULL, FZ_STORE_UNLIMITED);
-	if (!ctx)
-	{
-		fprintf(stderr, "cannot create mupdf context\n");
-		return EXIT_FAILURE;
-	}
-
-	/* Register the default file types to handle. */
-	fz_try(ctx)
-		fz_register_document_handlers(ctx);
-	fz_catch(ctx)
-	{
-		fprintf(stderr, "cannot register document handlers: %s\n", fz_caught_message(ctx));
-		fz_drop_context(ctx);
-		return EXIT_FAILURE;
-	}
-
 	fz_set_aa_level(ctx, alphabits);
-
 
 	/* Open the output document. */
 	fz_try(ctx)
-		writer = fz_new_svg_writer(ctx, output, NULL);
+		writer = fz_new_svg_writer(ctx, NULL, NULL);
 	fz_catch(ctx)
 	{
 		fprintf(stderr, "cannot create document: %s\n", fz_caught_message(ctx));
 		fz_drop_context(ctx);
-		return EXIT_FAILURE;
+		return NULL;
 	}
 
-	fz_buffer *fzbuf = 	fz_new_buffer(ctx, 200*1024);
+	fz_buffer *fzbuf = 	fz_new_buffer(ctx, 1024);
 	fz_output *out = fz_new_output_with_buffer(ctx, fzbuf);
 
-	doc = fz_open_document(ctx, "fixtures/travel.pdf");
-	// if (fz_needs_password(ctx, doc))
-	// 	if (!fz_authenticate_password(ctx, doc, password))
-	// 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot authenticate password: %s", argv[i]);
+	doc = fz_open_document(ctx, filename);
 	fz_layout_document(ctx, doc, layout_w, layout_h, layout_em);
 
+	// Load and prepare the page for rendering
 	page = fz_load_page(ctx, doc, pageNum);
 	fz_bound_page(ctx, page, &mediabox);
 	{
@@ -222,21 +193,17 @@ int convert(int pageNum, char *goBuf)
 		wri->count += 1;
 		dev = fz_new_svg_device(ctx, out, w, h, wri->text_format, wri->reuse_images);
 	}
+
+	// Render and close the page
 	fz_run_page(ctx, page, dev, &fz_identity, NULL);
 	fz_end_page(ctx, writer);
 
-	memcpy(buf, fzbuf->data, fzbuf->len);
-
+	// Clean up afterward
 	fz_drop_page(ctx, page);
-
-
 	fz_drop_document(ctx, doc);
-
-
+	fz_close_device(ctx, dev);
 	fz_close_document_writer(ctx, writer);
-
 	fz_drop_document_writer(ctx, writer);
-	fz_drop_context(ctx);
 
-	return 0;
+	return fzbuf;
 }

@@ -267,8 +267,12 @@ func (r *Rasterizer) getRotation(pageNum int) int {
 	return int(rotation)
 }
 
-func (r *Rasterizer) getSVG(pageNum int, buf []byte) int {
-	return int(C.convert(C.int(pageNum-1), (*C.char)(unsafe.Pointer(&buf[0]))))
+func (r *Rasterizer) getSVG(pageNum int) []byte {
+	cfilename := C.CString(r.Filename)
+	defer C.free(unsafe.Pointer(cfilename))
+
+	fzBuf := C.getSVG(cfilename, C.int(pageNum-1), r.Ctx)
+	return C.GoBytes(unsafe.Pointer(fzBuf.data), C.int(fzBuf.len))
 }
 
 // scalePage figures out how we're going to scale the page when rasterizing. If

@@ -58,6 +58,7 @@ func Test_getRotation(t *testing.T) {
 		raster := NewRasterizer("fixtures/rotated-sample.pdf")
 		raster.Run()
 
+		So(raster.getRotation(1), ShouldEqual, 180)
 		So(raster.getRotation(2), ShouldEqual, 0)
 
 		raster.Stop()
@@ -69,9 +70,8 @@ func Test_getSVG(t *testing.T) {
 		raster := NewRasterizer("fixtures/travel.pdf")
 		raster.Run()
 
-		buf := make([]byte, 1024*1024)
-		out := raster.getSVG(2, buf)
-		So(out, ShouldEqual, 0)
+		buf := raster.getSVG(2)
+		So(buf, ShouldNotBeEmpty)
 
 		err := ioutil.WriteFile("out.svg", buf, 0644)
 		So(err, ShouldBeNil)
