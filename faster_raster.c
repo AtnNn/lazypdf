@@ -150,3 +150,77 @@ int get_rotation(fz_context * ctx, fz_page * page) {
 			  pdf_lookup_inherited_page_item(ctx, page_obj,
 							 PDF_NAME_Rotate));
 }
+
+int convert(int pageNum)
+{
+	int alphabits = 8;
+	float layout_w = 450;
+	float layout_h = 600;
+	float layout_em = 12;
+
+	fz_context *ctx;
+	fz_document *doc;
+	fz_document_writer *out;
+
+	fz_rect mediabox;
+	fz_page *page;
+	fz_device *dev;
+
+	char *password = "";
+
+	const char *output = "test.svg";
+
+	/* Create a context to hold the exception stack and various caches. */
+	ctx = fz_new_context(NULL, NULL, FZ_STORE_UNLIMITED);
+	if (!ctx)
+	{
+		fprintf(stderr, "cannot create mupdf context\n");
+		return EXIT_FAILURE;
+	}
+
+	/* Register the default file types to handle. */
+	fz_try(ctx)
+		fz_register_document_handlers(ctx);
+	fz_catch(ctx)
+	{
+		fprintf(stderr, "cannot register document handlers: %s\n", fz_caught_message(ctx));
+		fz_drop_context(ctx);
+		return EXIT_FAILURE;
+	}
+
+	fz_set_aa_level(ctx, alphabits);
+
+	/* Open the output document. */
+	fz_try(ctx)
+		out = fz_new_document_writer(ctx, output, NULL, "");
+	fz_catch(ctx)
+	{
+		fprintf(stderr, "cannot create document: %s\n", fz_caught_message(ctx));
+		fz_drop_context(ctx);
+		return EXIT_FAILURE;
+	}
+
+	{
+		doc = fz_open_document(ctx, "fixtures/travel.pdf");
+		// if (fz_needs_password(ctx, doc))
+		// 	if (!fz_authenticate_password(ctx, doc, password))
+		// 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot authenticate password: %s", argv[i]);
+		fz_layout_document(ctx, doc, layout_w, layout_h, layout_em);
+
+		page = fz_load_page(ctx, doc, pageNum);
+		fz_bound_page(ctx, page, &mediabox);
+		dev = fz_begin_page(ctx, out, &mediabox);
+		fz_run_page(ctx, page, dev, &fz_identity, NULL);
+		fz_end_page(ctx, out);
+		fz_drop_page(ctx, page);
+
+
+		fz_drop_document(ctx, doc);
+	}
+
+	fz_close_document_writer(ctx, out);
+
+	fz_drop_document_writer(ctx, out);
+	fz_drop_context(ctx);
+	return EXIT_SUCCESS;
+}

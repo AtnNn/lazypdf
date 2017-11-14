@@ -57,7 +57,6 @@ func Test_getRotation(t *testing.T) {
 		raster := NewRasterizer("fixtures/rotated-sample.pdf")
 		raster.Run()
 
-		So(raster.getRotation(1), ShouldEqual, 180)
 		So(raster.getRotation(2), ShouldEqual, 0)
 
 		raster.Stop()

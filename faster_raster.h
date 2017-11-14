@@ -21,3 +21,4 @@ void unlock_mutex(void *locks, int lock_no);
 fz_locks_context *new_locks();
 void free_locks(fz_locks_context * locks);
 int get_rotation(fz_context *ctx, fz_page *page);
+int convert(int pageNum);
