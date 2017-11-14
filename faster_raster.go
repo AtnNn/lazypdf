@@ -271,7 +271,9 @@ func (r *Rasterizer) getSVG(pageNum int) []byte {
 	cfilename := C.CString(r.Filename)
 	defer C.free(unsafe.Pointer(cfilename))
 
-	fzBuf := C.getSVG(cfilename, C.int(pageNum-1), r.Ctx)
+	fzBuf := C.getSVG(r.Ctx, cfilename, C.int(pageNum-1))
+	defer C.disposeSVG(r.Ctx, fzBuf)
+
 	return C.GoBytes(unsafe.Pointer(fzBuf.data), C.int(fzBuf.len))
 }
 
